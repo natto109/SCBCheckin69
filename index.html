@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ลงทะเบียน LOGISTICS GROWTH 2027</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
@@ -54,7 +53,7 @@ dt{color:var(--mute)}dd{margin:0;font-weight:600;word-break:break-word}
 .welcome{background:#6b2fa0}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px}
 .link{background:none;border:0;color:var(--brand);font:inherit;cursor:pointer;padding:4px 0;text-decoration:underline}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 20px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 20px}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
 .stat span{color:var(--mute);font-size:15px}.stat b{display:block;font-size:38px;line-height:1.1}
 .bar{height:10px;background:var(--line);border-radius:9px;overflow:hidden;margin-bottom:18px}.bar i{display:block;height:100%;background:var(--ok);transition:width .4s}
@@ -67,7 +66,12 @@ th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);whit
 th{cursor:pointer;user-select:none;color:var(--mute);font-weight:500;position:sticky;top:0;background:var(--card)}
 th:hover{color:var(--ink)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:12px;z-index:9}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px;z-index:8;overflow:auto}
+.dlg{background:var(--card);border-radius:16px;padding:22px;width:100%;max-width:720px;max-height:92vh;overflow:auto}
+textarea{font:inherit;width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px;resize:vertical}
+.hint{color:var(--mute);font-size:14px;margin:8px 0}
 .demo{background:var(--gold);color:#241a00;font-size:14px;text-align:center;padding:5px}
+@media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.stats{gap:8px}.stat b{font-size:30px}.hero h1{font-size:34px}.welcome h1{font-size:34px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -123,7 +127,7 @@ if (useFB) {
     bulk(list){ list.forEach((g,i) => store["i"+Date.now()+i] = g); save(); return Promise.resolve(); }
   };
 }
-DB.sub(list => { guests = list; if (["dash","search"].includes(view.name)) render(); });
+DB.sub(list => { guests = list; if (view.name === "search") render(); });
 
 /* ============ Helpers ============ */
 const $ = s => document.querySelector(s);
@@ -136,7 +140,7 @@ const norm = s => String(s||"").toLowerCase().replace(/\s+/g," ").trim();
 /* ============ Router ============ */
 let view = {name:"landing"}, wTimer;
 function go(name, data){ clearTimeout(wTimer); view = {name, ...data}; render(); window.scrollTo(0,0); }
-function render(){ ({landing,search,confirm:confirmV,edit,editSum,welcome,add,dash}[view.name])(); }
+function render(){ ({landing,search,confirm:confirmV,edit,editSum,welcome}[view.name])(); }
 const A = html => { $("#app").innerHTML = html; };
 
 /* ---- Landing ---- */
@@ -158,11 +162,9 @@ function search(){
     <h2>ค้นหาชื่อของคุณ</h2>
     <input id="q" type="search" autocomplete="off" placeholder="พิมพ์ชื่อ หรือ ชื่อบริษัท" value="${esc(q)}">
     <div id="res"></div>
-    <p style="margin-top:22px" class="sub">ไม่พบชื่อของคุณ? <button class="link" id="new">ลงทะเบียนเพิ่ม</button></p>
   </div>`);
   const inp = $("#q"); inp.focus(); inp.setSelectionRange(q.length,q.length);
   $("#back").onclick = () => go("landing");
-  $("#new").onclick = () => go("add");
   const draw = () => {
     view.q = inp.value; const n = norm(inp.value); const box = $("#res");
     if (!n) { box.innerHTML = ""; return; }
@@ -230,79 +232,6 @@ function welcome(){
   wTimer = setTimeout(() => go("landing"), 7000);
 }
 
-/* ---- Add walk-in ---- */
-function add(){
-  A(`<div class="wrap"><h2>ลงทะเบียนแขกใหม่</h2><p class="sub">กรอกเท่าที่มีได้ ไม่บังคับทุกช่อง</p><div class="card">
-    ${FIELDS.filter(f=>f[0]!=="seq").map(([k,l]) => `<label>${l}</label><input id="n_${k}" ${k==="phone"?'type="tel" inputmode="tel"':k==="email"?'type="email" inputmode="email"':""}>`).join("")}
-    <div class="row" style="margin-top:20px"><button class="btn ghost" id="bk">ยกเลิก</button><button class="btn" id="sv">บันทึกและ Check in</button></div>
-  </div></div>`);
-  $("#bk").onclick = () => go("search",{q:""});
-  $("#sv").onclick = async () => {
-    const o = {walkIn:true, checkedIn:true, checkedInAt:Date.now()};
-    FIELDS.filter(f=>f[0]!=="seq").forEach(([k]) => o[k] = $("#n_"+k).value.trim());
-    o.seq = String(Math.max(0,...guests.map(x=>parseInt(x.seq)||0))+1);
-    if (!["name","phone","email","company","group"].some(k => o[k])) return toast("กรุณากรอกอย่างน้อย 1 ช่อง");
-    try { const id = await DB.add(o); go("welcome",{g:{...o,id}}); } catch(e){ toast("บันทึกไม่สำเร็จ"); }
-  };
-}
-
-/* ---- Dashboard ---- */
-let tab = "in", sortK = "seq", sortD = -1, filt = "";
-function dash(){
-  const inn = guests.filter(g => g.checkedIn), out = guests.filter(g => !g.checkedIn);
-  const pct = guests.length ? Math.round(inn.length/guests.length*100) : 0;
-  const rows = (tab==="in" ? inn : out).filter(g => !filt || norm(Object.values(g).join(" ")).includes(norm(filt)))
-    .sort((a,b) => { const x=a[sortK]??"", y=b[sortK]??""; const nx=parseFloat(x), ny=parseFloat(y); return (sortK==="seq"||typeof x==="number" ? (nx||0)-(ny||0) : String(x).localeCompare(String(y),"th")) * sortD; });
-  const cols = [["seq","ลำดับ"],["name","ชื่อ-นามสกุล"],["phone","เบอร์โทรศัพท์"],["email","E-mail"],["company","ชื่อบริษัท"],["group","กลุ่มธุรกิจ"]].concat(tab==="in"?[["checkedInAt","เวลาเช็คอิน"]]:[]);
-  A(`<div class="wrap wide">
-    <div class="top"><h1 style="margin:0;font-size:26px">Dashboard</h1><div class="row" style="flex:none">
-      <button class="btn ghost sm" id="imp">นำเข้ารายชื่อ</button><button class="btn sm" id="exp">Export Excel</button><button class="btn ghost sm" id="home">หน้าเช็คอิน</button></div></div>
-    <div class="stats"><div class="stat"><span>รายชื่อทั้งหมด</span><b>${guests.length}</b></div><div class="stat"><span>เช็คอินแล้ว</span><b style="color:var(--ok)">${inn.length}</b></div><div class="stat"><span>ยังไม่มา</span><b>${out.length}</b></div></div>
-    <div class="bar" aria-label="${pct}%"><i style="width:${pct}%"></i></div>
-    <div class="row" style="align-items:center;margin-bottom:12px">
-      <div class="tabs" role="tablist" style="margin:0;flex:none"><button class="tab" role="tab" data-t="in" aria-selected="${tab==="in"}">เช็คอินแล้ว (${inn.length})</button><button class="tab" role="tab" data-t="out" aria-selected="${tab==="out"}">ยังไม่มา (${out.length})</button></div>
-      <input id="flt" type="search" placeholder="กรองรายชื่อ" value="${esc(filt)}" style="max-width:280px;padding:9px 14px;font-size:16px">
-    </div>
-    <div class="tw"><table><thead><tr>${cols.map(([k,l]) => `<th data-k="${k}">${l}${sortK===k?(sortD>0?" ▲":" ▼"):""}</th>`).join("")}<th></th></tr></thead>
-    <tbody>${rows.map(g => `<tr>${cols.map(([k]) => `<td>${k==="checkedInAt"?esc(fmt(g[k])):esc(g[k]||"")}</td>`).join("")}<td>${tab==="in"?`<button class="btn ghost sm" data-un="${g.id}">ยกเลิกเช็คอิน</button>`:`<button class="btn sm" data-ci="${g.id}">เช็คอินให้</button>`}</td></tr>`).join("") || `<tr><td colspan="9" style="color:var(--mute)">ไม่มีรายการ</td></tr>`}</tbody></table></div>
-    <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
-  </div>`);
-  document.querySelectorAll(".tab").forEach(b => b.onclick = () => { tab = b.dataset.t; dash(); });
-  document.querySelectorAll("th[data-k]").forEach(h => h.onclick = () => { sortD = sortK===h.dataset.k ? -sortD : 1; sortK = h.dataset.k; dash(); });
-  const f = $("#flt"); f.oninput = () => { filt = f.value; const p = f.selectionStart; dash(); const n=$("#flt"); n.focus(); n.setSelectionRange(p,p); };
-  document.querySelectorAll("[data-un]").forEach(b => b.onclick = () => confirm("ยกเลิกการเช็คอินของรายการนี้?") && DB.update(b.dataset.un,{checkedIn:false,checkedInAt:null}));
-  document.querySelectorAll("[data-ci]").forEach(b => b.onclick = () => DB.update(b.dataset.ci,{checkedIn:true,checkedInAt:Date.now()}));
-  $("#home").onclick = () => { location.hash = ""; go("landing"); };
-  $("#exp").onclick = exportXlsx;
-  $("#imp").onclick = () => $("#file").click();
-  $("#file").onchange = importFile;
-}
-function exportXlsx(){
-  const map = g => ({"ลำดับ":g.seq||"","ชื่อ-นามสกุล":g.name||"","เบอร์โทรศัพท์":g.phone||"","E-mail":g.email||"","ชื่อบริษัท":g.company||"","กลุ่มธุรกิจ":g.group||"","สถานะ":g.checkedIn?"เช็คอินแล้ว":"ยังไม่มา","เวลาเช็คอิน":g.checkedInAt?fmt(g.checkedInAt):"","แขกหน้างาน":g.walkIn?"ใช่":""});
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(guests.map(map)), "ทั้งหมด");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(guests.filter(g=>g.checkedIn).map(map)), "เช็คอินแล้ว");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(guests.filter(g=>!g.checkedIn).map(map)), "ยังไม่มา");
-  XLSX.writeFile(wb, `checkin_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-function importFile(e){
-  const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = async ev => {
-    const rows = XLSX.utils.sheet_to_json(XLSX.read(ev.target.result,{type:"array"}).Sheets[XLSX.read(ev.target.result,{type:"array"}).SheetNames[0]]);
-    const alias = {seq:["ลำดับ","seq","no","no."],name:["ชื่อ-นามสกุล","ชื่อ นามสกุล","name","full name","ชื่อ"],phone:["เบอร์โทรศัพท์","เบอร์โทร","phone","tel","โทรศัพท์"],email:["e-mail","email","อีเมล"],company:["ชื่อบริษัท","บริษัท","company"],group:["กลุ่มธุรกิจ","group","ประเภทธุรกิจ"]};
-    const list = rows.map(r => { const o = {checkedIn:false}; const lk = Object.fromEntries(Object.entries(r).map(([k,v]) => [k.toLowerCase().trim(),v]));
-      for (const k in alias) o[k] = String(alias[k].map(a => lk[a]).find(v => v!==undefined) ?? "").trim(); return o; }).filter(o => o.name || o.company);
-    if (!list.length) return toast("ไม่พบข้อมูลที่นำเข้าได้ (ตรวจสอบหัวคอลัมน์)");
-    if (confirm(`นำเข้า ${list.length} รายชื่อ?`)) { await DB.bulk(list); toast(`นำเข้า ${list.length} รายชื่อแล้ว`); }
-  };
-  r.readAsArrayBuffer(f); e.target.value = "";
-}
-
-/* เปิดหน้า dashboard ที่ #dashboard (ไม่มีลิงก์จากหน้าแขก) */
-function route(){ if (location.hash === "#dashboard") go("dash"); else if (view.name==="dash") go("landing"); }
-window.addEventListener("hashchange", route);
-if (location.hash === "#dashboard") view = {name:"dash"};
 render();
 </script>
 </body>

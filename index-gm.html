@@ -3,66 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Event Registration</title>
-  
-  <!-- Tailwind CSS CDN -->
+  <title>Station 1: Check-in</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- SheetJS (Excel Export) CDN -->
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-
-  <style>
-    /* ซ่อนหน้าที่ไม่ได้ใช้งาน */
-    .page { display: none; }
-    .page.active { display: block; }
-  </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
-
-  <!-- Main Container -->
-  <div id="app" class="max-w-md mx-auto min-h-screen shadow-md bg-white relative">
+  <div id="app" class="max-w-md mx-auto min-h-screen shadow-md bg-white relative flex flex-col">
     
-    <!-- ==================== หน้า Landing ==================== -->
-    <div id="page-landing" class="page active flex flex-col items-center justify-center min-h-screen p-6 text-center">
-      <h1 class="text-3xl font-bold text-purple-700 mb-2">LOGISTICS GROWTH 2027</h1>
-      <p class="text-gray-600 mb-10">ระบบลงทะเบียนเข้าร่วมงาน</p>
-      <button onclick="nav('page-search')" class="w-full bg-blue-600 text-white text-xl py-4 rounded-xl shadow-lg font-semibold active:scale-95 transition-transform">
-        Enter (ค้นหารายชื่อ)
+    <!-- ==================== 1. หน้า Landing Page ==================== -->
+    <div id="view-landing" class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <h1 class="text-4xl font-bold text-purple-700 mb-4 tracking-wide">LOGISTICS GROWTH<br>2027</h1>
+      <p class="text-gray-500 mb-12 text-lg">จุดเช็คอินสำหรับผู้มีรายชื่อล่วงหน้า</p>
+      
+      <button onclick="enterSearch()" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-2xl py-5 rounded-2xl shadow-[0_8px_20px_rgba(37,99,235,0.3)] font-bold active:scale-95 transition-all">
+        Enter
       </button>
-      <button onclick="nav('page-walkin')" class="w-full mt-4 bg-white text-blue-600 border border-blue-600 text-lg py-3 rounded-xl shadow-sm font-semibold active:scale-95 transition-transform">
-        ลงทะเบียนใหม่ (Walk-in)
-      </button>
-      <button onclick="nav('page-dashboard')" class="mt-8 text-sm text-gray-400 underline">ไปหน้า Admin Dashboard</button>
     </div>
 
-    <!-- ==================== หน้า Search ==================== -->
-    <div id="page-search" class="page min-h-screen p-6 flex flex-col">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold">ค้นหารายชื่อ</h2>
-        <button onclick="nav('page-landing')" class="text-blue-500">กลับ</button>
+    <!-- ==================== 2. หน้าค้นหา ==================== -->
+    <div id="view-search" class="flex-1 flex flex-col p-6" style="display: none;">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold text-blue-700">ค้นหารายชื่อ</h2>
+        <button onclick="backToLanding()" class="text-gray-600 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg font-semibold transition-colors">กลับ</button>
       </div>
-      <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ นามสกุล หรือ ชื่อบริษัท..." class="w-full p-4 border rounded-xl text-lg mb-4 focus:ring-2 focus:ring-blue-500 outline-none">
+      <input type="text" id="searchInput" placeholder="พิมพ์ชื่อ นามสกุล หรือ บริษัท..." class="w-full p-4 border-2 border-gray-200 rounded-xl text-lg mb-4 focus:border-blue-500 outline-none transition-colors">
       <div id="searchResults" class="flex-1 overflow-y-auto"></div>
     </div>
 
-    <!-- ==================== หน้า Confirm & Edit ==================== -->
-    <div id="page-confirm" class="page min-h-screen p-6 flex flex-col justify-center">
-      <!-- ส่วนแสดงผลยืนยัน -->
-      <div id="confirm-view">
-        <div class="bg-white p-6 rounded-xl shadow-md border text-center mb-8">
+    <!-- ==================== 3. หน้าต่างยืนยัน/แก้ไข ==================== -->
+    <div id="view-confirm" class="absolute inset-0 bg-white p-6 flex flex-col justify-center" style="display: none;">
+      <div id="confirm-box">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center mb-8">
           <h2 class="text-gray-500 mb-2">ยืนยันข้อมูลการเช็คอิน</h2>
           <p id="c-name" class="text-2xl font-bold mb-1">-</p>
           <p id="c-company" class="text-lg text-gray-600">-</p>
         </div>
         <div class="space-y-4">
-          <button id="btn-checkin" class="w-full p-4 bg-green-500 text-white rounded-xl text-xl font-bold shadow-md">Check in</button>
-          <button onclick="toggleEditMode(true)" class="w-full p-4 bg-yellow-500 text-white rounded-xl text-xl font-bold shadow-md">แก้ไขข้อมูล</button>
-          <button onclick="nav('page-search')" class="w-full p-4 bg-gray-300 text-gray-800 rounded-xl text-xl font-bold shadow-md">Cancel</button>
+          <button id="btn-checkin" class="w-full p-4 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xl font-bold shadow-md transition-colors">Check in</button>
+          <button onclick="toggleEdit(true)" class="w-full p-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl text-xl font-bold shadow-md transition-colors">แก้ไขข้อมูล</button>
+          <button onclick="closeConfirm()" class="w-full p-4 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-xl font-bold transition-colors">ยกเลิก</button>
         </div>
       </div>
 
-      <!-- ส่วนฟอร์มแก้ไข -->
-      <div id="edit-view" class="hidden">
+      <div id="edit-box" style="display: none;">
         <h2 class="text-2xl font-bold mb-4">แก้ไขข้อมูล</h2>
         <div class="space-y-4">
           <input id="e-name" class="w-full p-3 border rounded-lg" placeholder="ชื่อ-นามสกุล">
@@ -71,125 +53,56 @@
           <input id="e-company" class="w-full p-3 border rounded-lg" placeholder="บริษัท">
         </div>
         <div class="mt-8 flex gap-3">
-          <button onclick="toggleEditMode(false)" class="flex-1 p-3 bg-gray-200 rounded-lg font-bold">ยกเลิก</button>
-          <button id="btn-save-checkin" class="flex-1 p-3 bg-blue-600 text-white rounded-lg font-bold">Save & Check in</button>
+          <button onclick="toggleEdit(false)" class="flex-1 p-4 bg-gray-200 hover:bg-gray-300 rounded-xl font-bold transition-colors">ยกเลิก</button>
+          <button id="btn-save-checkin" class="flex-1 p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-colors">Save & Check in</button>
         </div>
       </div>
     </div>
 
-    <!-- ==================== หน้า Welcome (Success) ==================== -->
-    <div id="page-success" class="page min-h-screen flex flex-col items-center justify-center p-6 text-center bg-green-50">
+    <!-- ==================== 4. หน้าสำเร็จ ==================== -->
+    <div id="view-success" class="absolute inset-0 bg-green-50 p-6 flex flex-col items-center justify-center text-center" style="display: none;">
+      <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg">
+        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+      </div>
       <h1 class="text-3xl font-bold text-green-700 mb-4">ยินดีต้อนรับ</h1>
       <p id="s-name" class="text-2xl font-bold mb-2">-</p>
       <p id="s-company" class="text-xl text-gray-700">-</p>
-      <button onclick="nav('page-landing')" class="mt-8 p-3 bg-blue-600 text-white rounded-lg px-8">เสร็จสิ้น</button>
-    </div>
-
-    <!-- ==================== หน้า Walk-in ==================== -->
-    <div id="page-walkin" class="page min-h-screen p-6">
-      <h2 class="text-2xl font-bold mb-6 text-center">ลงทะเบียน (Walk-in)</h2>
-      <form id="walkinForm" class="space-y-4">
-        <input id="w-name" class="w-full p-3 border rounded-lg" required placeholder="ชื่อ-นามสกุล *">
-        <input id="w-phone" class="w-full p-3 border rounded-lg" placeholder="เบอร์โทรศัพท์">
-        <input id="w-email" class="w-full p-3 border rounded-lg" type="email" placeholder="E-mail">
-        <input id="w-company" class="w-full p-3 border rounded-lg" placeholder="ชื่อบริษัท">
-        <input id="w-group" class="w-full p-3 border rounded-lg" placeholder="กลุ่มธุรกิจ">
-        <div class="pt-4 flex gap-3">
-           <button type="button" onclick="nav('page-landing')" class="flex-1 p-3 bg-gray-200 rounded-lg font-bold">ยกเลิก</button>
-           <button type="submit" class="flex-1 p-3 bg-blue-600 text-white rounded-lg font-bold">Check in</button>
-        </div>
-      </form>
+      <button onclick="resetToLanding()" class="mt-12 p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-10 font-bold shadow-md transition-colors">เสร็จสิ้น (กลับหน้าแรก)</button>
     </div>
   </div>
 
-  <!-- ==================== หน้า Dashboard ==================== -->
-  <div id="page-dashboard" class="page min-h-screen bg-gray-100 p-6 w-full">
-    <div class="max-w-5xl mx-auto">
-      <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold">Dashboard สรุปยอดลงทะเบียน</h2>
-        <div>
-          <button onclick="exportExcel()" class="bg-green-600 text-white px-4 py-2 rounded shadow mr-2">Export Excel</button>
-          <button onclick="nav('page-landing')" class="bg-gray-400 text-white px-4 py-2 rounded shadow">หน้าแรก</button>
-        </div>
-      </div>
-      <div class="grid grid-cols-3 gap-4 mb-6 text-center">
-        <div class="bg-white p-4 rounded-lg shadow"><p class="text-sm text-gray-500">ทั้งหมด</p><p id="d-total" class="text-2xl font-bold">0</p></div>
-        <div class="bg-green-100 p-4 rounded-lg shadow"><p class="text-sm text-green-700">เช็คอินแล้ว</p><p id="d-checked" class="text-2xl font-bold text-green-800">0</p></div>
-        <div class="bg-yellow-100 p-4 rounded-lg shadow"><p class="text-sm text-yellow-700">ยังไม่มา</p><p id="d-pending" class="text-2xl font-bold text-yellow-800">0</p></div>
-      </div>
-      <div class="flex mb-4">
-        <button onclick="switchTab('checked_in')" id="tab-checked" class="flex-1 py-3 text-center font-bold bg-blue-600 text-white">เช็คอินแล้ว</button>
-        <button onclick="switchTab('pending')" id="tab-pending" class="flex-1 py-3 text-center font-bold bg-gray-200">ยังไม่มา</button>
-      </div>
-      <div class="bg-white rounded-lg shadow overflow-x-auto">
-        <table class="w-full text-left border-collapse min-w-[600px]">
-          <thead>
-            <tr class="bg-gray-50 border-b">
-              <th class="p-3">ชื่อ-นามสกุล</th>
-              <th class="p-3">บริษัท</th>
-              <th class="p-3">สถานะ / เวลา</th>
-            </tr>
-          </thead>
-          <tbody id="dashboard-table-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== JavaScript Logic ==================== -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, addDoc, serverTimestamp, onSnapshot } 
-    from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyBiiV4i3gExoT-SbB6uGMeQGmslj34Y_mY",
-      authDomain: "selfcheckin69.firebaseapp.com",
-      projectId: "selfcheckin69",
-      storageBucket: "selfcheckin69.firebasestorage.app",
-      messagingSenderId: "148350658850",
-      appId: "1:148350658850:web:f9c9d459ea037c7fec9d7b"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    import { db } from './firebase-config.js';
+    import { collection, getDocs, doc, getDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
     let allAttendees = [];
     let currentGuest = null;
-    let currentTab = 'checked_in';
 
-    // Navigation
-    window.nav = (pageId) => {
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.getElementById(pageId).classList.add('active');
-      
-      if(pageId === 'page-search') loadAttendees();
-      if(pageId === 'page-dashboard') initDashboard();
-      
-      // ปรับขนาด layout คืนถ้าไม่ใช่หน้า Dashboard
-      const appDiv = document.getElementById('app');
-      if(pageId === 'page-dashboard') {
-        appDiv.classList.remove('max-w-md');
-        appDiv.classList.add('w-full');
-      } else {
-        appDiv.classList.add('max-w-md');
-        appDiv.classList.remove('w-full');
-      }
-    };
-
-    // Load Data for Search
-    async function loadAttendees() {
+    // โหลดข้อมูลเมื่อเปิดหน้าเว็บ
+    async function loadData() {
       const snapshot = await getDocs(collection(db, "attendees"));
       allAttendees = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    loadData();
+
+    // ควบคุมการเปลี่ยนหน้า
+    window.enterSearch = () => {
+      document.getElementById('view-landing').style.display = 'none';
+      document.getElementById('view-search').style.display = 'flex';
+      document.getElementById('searchInput').focus();
+    };
+
+    window.backToLanding = () => {
+      document.getElementById('view-search').style.display = 'none';
+      document.getElementById('view-landing').style.display = 'flex';
       document.getElementById('searchInput').value = '';
       document.getElementById('searchResults').innerHTML = '';
-    }
+    };
 
-    // Search Logic
+    // ระบบค้นหา
     document.getElementById('searchInput').addEventListener('input', (e) => {
       const keyword = e.target.value.toLowerCase().trim();
       const resultsDiv = document.getElementById('searchResults');
-      
       if (!keyword) { resultsDiv.innerHTML = ''; return; }
 
       const filtered = allAttendees.filter(g => 
@@ -198,18 +111,19 @@
       );
 
       resultsDiv.innerHTML = filtered.map(g => `
-        <div onclick="selectGuest('${g.id}')" class="p-4 mb-3 bg-white border rounded-lg shadow-sm cursor-pointer active:bg-gray-100">
-          <p class="font-bold text-lg">${g.fullName || '-'}</p>
-          <p class="text-gray-600 text-sm">${g.company || '-'}</p>
+        <div onclick="selectGuest('${g.id}')" class="p-4 mb-3 bg-white border ${g.status === 'checked_in' ? 'border-green-400 bg-green-50' : 'border-gray-200'} rounded-xl shadow-sm cursor-pointer hover:border-blue-400 active:bg-gray-50 transition-all">
+          <div class="flex justify-between items-center">
+             <div>
+                <p class="font-bold text-lg text-gray-800">${g.fullName || '-'}</p>
+                <p class="text-gray-500 text-sm mt-1">${g.company || '-'}</p>
+             </div>
+             ${g.status === 'checked_in' ? '<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold shadow-sm">✅ เช็คอินแล้ว</span>' : ''}
+          </div>
         </div>
       `).join('');
-
-      if(filtered.length === 0) {
-        resultsDiv.innerHTML = `<p class="text-center text-gray-500 mt-4">ไม่พบรายชื่อ</p>`;
-      }
     });
 
-    // Select Guest & Confirm
+    // เลือกรายชื่อ
     window.selectGuest = async (id) => {
       const docRef = doc(db, "attendees", id);
       const snap = await getDoc(docRef);
@@ -217,136 +131,69 @@
         currentGuest = { id: snap.id, ...snap.data() };
         document.getElementById('c-name').innerText = currentGuest.fullName;
         document.getElementById('c-company').innerText = currentGuest.company || '-';
-        toggleEditMode(false);
-        nav('page-confirm');
+        document.getElementById('view-search').style.display = 'none';
+        document.getElementById('view-confirm').style.display = 'flex';
       }
     };
 
-    // Toggle Edit Mode
-    window.toggleEditMode = (show) => {
+    // ปิดหน้าต่างยืนยัน
+    window.closeConfirm = () => {
+      document.getElementById('view-confirm').style.display = 'none';
+      document.getElementById('view-search').style.display = 'flex';
+      toggleEdit(false);
+    };
+
+    // เปิด/ปิดโหมดแก้ไข
+    window.toggleEdit = (show) => {
       if(show) {
-        document.getElementById('confirm-view').classList.add('hidden');
-        document.getElementById('edit-view').classList.remove('hidden');
+        document.getElementById('confirm-box').style.display = 'none';
+        document.getElementById('edit-box').style.display = 'block';
         document.getElementById('e-name').value = currentGuest.fullName || '';
         document.getElementById('e-phone').value = currentGuest.phone || '';
         document.getElementById('e-email').value = currentGuest.email || '';
         document.getElementById('e-company').value = currentGuest.company || '';
       } else {
-        document.getElementById('confirm-view').classList.remove('hidden');
-        document.getElementById('edit-view').classList.add('hidden');
+        document.getElementById('confirm-box').style.display = 'block';
+        document.getElementById('edit-box').style.display = 'none';
       }
     };
 
-    // Check In Function
+    // บันทึกการเช็คอิน
     async function processCheckIn(data) {
+      // ปรับปรุง UI ทันที
       document.getElementById('s-name').innerText = data.fullName;
       document.getElementById('s-company').innerText = data.company || '-';
+      document.getElementById('view-confirm').style.display = 'none';
+      document.getElementById('view-success').style.display = 'flex';
       
+      // บันทึกลงฐานข้อมูล
       await updateDoc(doc(db, "attendees", currentGuest.id), {
         ...data,
         status: 'checked_in',
         checkInTime: serverTimestamp()
       });
-      nav('page-success');
+      loadData(); // รีเฟรชข้อมูลในระบบ
     }
 
     document.getElementById('btn-checkin').addEventListener('click', () => processCheckIn(currentGuest));
     
     document.getElementById('btn-save-checkin').addEventListener('click', () => {
-      const updatedData = {
+      processCheckIn({
         fullName: document.getElementById('e-name').value,
         phone: document.getElementById('e-phone').value,
         email: document.getElementById('e-email').value,
         company: document.getElementById('e-company').value,
-      };
-      processCheckIn(updatedData);
-    });
-
-    // Walk In
-    document.getElementById('walkinForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const newData = {
-        fullName: document.getElementById('w-name').value,
-        phone: document.getElementById('w-phone').value,
-        email: document.getElementById('w-email').value,
-        company: document.getElementById('w-company').value,
-        businessGroup: document.getElementById('w-group').value,
-        status: 'checked_in',
-        checkInTime: serverTimestamp()
-      };
-      await addDoc(collection(db, "attendees"), newData);
-      
-      document.getElementById('s-name').innerText = newData.fullName;
-      document.getElementById('s-company').innerText = newData.company || '-';
-      document.getElementById('walkinForm').reset();
-      nav('page-success');
-    });
-
-    // Dashboard
-    let dashboardUnsub = null;
-    let dashData = [];
-
-    window.initDashboard = () => {
-      if(dashboardUnsub) dashboardUnsub();
-      dashboardUnsub = onSnapshot(collection(db, "attendees"), (snapshot) => {
-        dashData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderDashboard();
       });
+    });
+
+    // กลับไปหน้า Landing หลังเสร็จสิ้น
+    window.resetToLanding = () => {
+      document.getElementById('view-success').style.display = 'none';
+      document.getElementById('view-landing').style.display = 'flex';
+      document.getElementById('searchInput').value = '';
+      document.getElementById('searchResults').innerHTML = '';
+      toggleEdit(false);
     };
-
-    window.switchTab = (tab) => {
-      currentTab = tab;
-      document.getElementById('tab-checked').className = `flex-1 py-3 text-center font-bold ${tab === 'checked_in' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`;
-      document.getElementById('tab-pending').className = `flex-1 py-3 text-center font-bold ${tab === 'pending' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`;
-      renderDashboard();
-    };
-
-    function renderDashboard() {
-      const checkedList = dashData.filter(a => a.status === 'checked_in');
-      const pendingList = dashData.filter(a => a.status === 'pending' || !a.status);
-      
-      document.getElementById('d-total').innerText = dashData.length;
-      document.getElementById('d-checked').innerText = checkedList.length;
-      document.getElementById('d-pending').innerText = pendingList.length;
-
-      const displayList = currentTab === 'checked_in' ? checkedList : pendingList;
-      const tbody = document.getElementById('dashboard-table-body');
-      
-      tbody.innerHTML = displayList.map(g => {
-        const timeStr = g.checkInTime ? new Date(g.checkInTime.toDate()).toLocaleTimeString('th-TH') + ' น.' : '';
-        const statusHtml = g.status === 'checked_in' 
-          ? `<span class="text-green-600 font-medium">[✅ เช็คอินแล้ว] ${timeStr}</span>` 
-          : `<span class="text-gray-400">[⏳ ยังไม่มา]</span>`;
-
-        return `
-          <tr class="border-b">
-            <td class="p-3">${g.fullName || '-'}</td>
-            <td class="p-3">${g.company || '-'}</td>
-            <td class="p-3">${statusHtml}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // Export Excel
-    window.exportExcel = () => {
-      const exportData = dashData.map((a, i) => ({
-        'ลำดับ': i + 1,
-        'ชื่อ-นามสกุล': a.fullName || '',
-        'เบอร์โทรศัพท์': a.phone || '',
-        'E-mail': a.email || '',
-        'ชื่อบริษัท': a.company || '',
-        'กลุ่มธุรกิจ': a.businessGroup || '',
-        'สถานะ': a.status === 'checked_in' ? 'เช็คอินแล้ว' : 'ยังไม่มา',
-        'เวลาเช็คอิน': a.checkInTime ? new Date(a.checkInTime.toDate()).toLocaleTimeString('th-TH') : '-'
-      }));
-      
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Attendees");
-      XLSX.writeFile(wb, "Event_Registration.xlsx");
-    };
-
   </script>
 </body>
 </html>
